@@ -1,6 +1,7 @@
 import "../styles/globals.css";
 import { ApolloProvider } from "@apollo/client";
 import { client } from "../graphql/client";
+import { wrapper } from "./store";
 
 function MyApp({ Component, pageProps }) {
   return (
@@ -10,4 +11,4 @@ function MyApp({ Component, pageProps }) {
   );
 }
 
-export default MyApp;
+export default wrapper.withRedux(MyApp);

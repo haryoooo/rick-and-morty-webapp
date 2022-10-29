@@ -1,9 +1,11 @@
 import { gql } from "@apollo/client";
 
-export const getCharacters = (filter) => {
+export const getCharacters = (page, filter) => {
   return gql`
             query {
-              characters(page: ${filter}) {
+              characters(${
+                !filter ? `page: ${page}` : `page: ${page}, filter: ${filter}`
+              }) {
                 results {
                   image
                   name

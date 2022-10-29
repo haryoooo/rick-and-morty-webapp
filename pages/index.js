@@ -1,4 +1,3 @@
-import { data, info } from "autoprefixer";
 import Button from "@mui/material/Button";
 import Router, { useRouter } from "next/router";
 import { client } from "../graphql/client";
@@ -6,17 +5,36 @@ import { getCharacters } from "../graphql/queries";
 import CardComponent from "./components/CardComponent";
 import FilterComponent from "./components/FilterComponent";
 import FooterComponent from "./components/FooterComponent";
+import SearchBarComponent from "./components/SearchBarComponent";
+import DropDownComponent from "./components/DropDownComponent";
 import HeaderComponent from "./components/HeaderComponent";
 import NavbarComponent from "./components/NavbarComponent";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Home({ data, next }) {
+  const styles = {
+    container: "flex justify-center flex-row mx-4",
+  };
+
+  const Router = useRouter();
+  const page = Number(Router?.query?.page);
+  const statusOptions = ["Dead", "Alive"];
+  const genderOptions = ["Male", "Female"];
+  const speciesOptions = [
+    "Human",
+    "Animal",
+    "Alien",
+    "Humanoid",
+    "Mythological Creature",
+    "Disease",
+    "Robot",
+  ];
+
   const [item, setItem] = useState({
     isLoading: false,
     datas: data,
     hasMore: false,
     prev: null,
-    next: next,
   });
 
   function handlePage() {
@@ -24,35 +42,48 @@ export default function Home({ data, next }) {
       ...prev,
       isLoading: true,
       hasMore: true,
-      next: next + 1,
     }));
+    nextPages();
   }
 
   function nextPages() {
-    setItem((prev) => ({
-      ...prev,
-      isLoading: false,
-      hasMore: false,
-      datas: prev.datas.concat(data),
-    }));
+    if (page >= 1) {
+      Router.push(`/?page=${page + 1}`);
+      setItem((prev) => ({
+        ...prev,
+        isLoading: false,
+        hasMore: false,
+      }));
+    }
   }
 
   useEffect(() => {
-    if (item.hasMore === true) {
-      nextPages();
+    if (page > 1) {
+      setItem((prev) => ({
+        ...prev,
+        datas: prev.datas.concat(data),
+      }));
     }
+  }, [page]);
 
-    if (item.next > 1) {
-      Router.push(`/?page=${next - 1}&nextPage=${next}`);
+  useEffect(() => {
+    if (Router.asPath === "/") {
+      Router.push(`/?page=${1}`);
     }
-  }, [item]);
+  }, []);
 
   return (
     <div className="container-lg mx-auto">
-      {console.log(item)}
       <NavbarComponent />
       <HeaderComponent />
-      <FilterComponent />
+
+      <div className={styles.container}>
+        <SearchBarComponent />
+        <DropDownComponent title={"Species"} options={speciesOptions} />
+        <DropDownComponent title={"Gender"} options={genderOptions} />
+        <DropDownComponent title={"Status"} options={statusOptions} />
+      </div>
+
       {!data || item.isLoading ? (
         <div className="text-center my-24">
           <h4 className="weight-bold">Loading...</h4>
@@ -82,8 +113,7 @@ export default function Home({ data, next }) {
 }
 
 export const getServerSideProps = async (context) => {
-  const page = !context.query.nextPage ? 1 : Number(context.query.nextPage);
-
+  const page = !context.query.page ? 1 : Number(context.query.page);
   const { data } = await client.query({
     query: getCharacters(page),
   });
